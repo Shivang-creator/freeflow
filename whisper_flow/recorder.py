@@ -40,25 +40,6 @@ class AudioRecorder:
         self._stream: Optional[sd.InputStream] = None
         self._lock = threading.Lock()
 
-        # Initialize permanent background stream
-        self._init_stream()
-
-    def _init_stream(self) -> None:
-        """Starts the low-latency background audio capture stream."""
-        try:
-            self._stream = sd.InputStream(
-                samplerate=self.sample_rate,
-                channels=1,
-                dtype="float32",
-                callback=self._audio_callback,
-                blocksize=self.block_size,
-            )
-            self._stream.start()
-            log.info("Permanent background audio stream active (16kHz float32, %dms pre-buffer).", self.pre_buffer_blocks * 64)
-        except Exception as e:
-            log.error("Failed to initialize sounddevice stream: %s", e)
-            self._stream = None
-
     def _audio_callback(self, indata: np.ndarray, frames: int, time_info: dict, status: sd.CallbackFlags) -> None:
         chunk = indata[:, 0].copy()
         with self._lock:
@@ -78,31 +59,36 @@ class AudioRecorder:
                             self.is_toggle_mode = False
                             cb = self.on_silence_callback
                             threading.Thread(target=cb, daemon=True).start()
-            else:
-                self._ring_buffer.append(chunk)
 
     def start(self, is_toggle: bool = False, on_silence_callback: Optional[Callable[[], None]] = None) -> None:
-        """Starts capturing audio, immediately prepending the 400ms pre-buffer."""
+        """Starts capturing audio on demand, keeping hardware free when idle for macOS Hey Siri."""
         with self._lock:
             if self.is_recording:
                 return
 
-            # Re-initialize stream if it was lost (e.g. device disconnect)
-            if self._stream is None or not self._stream.active:
-                self._init_stream()
-
-            # Prepend rolling pre-buffer so the initial syllable is NEVER lost
-            self._active_chunks = list(self._ring_buffer)
-            self._ring_buffer.clear()
+            self._active_chunks = []
             self.is_recording = True
             self.is_toggle_mode = is_toggle
             self.on_silence_callback = on_silence_callback
             self._speech_detected = False
             self._consecutive_silent_blocks = 0
-            log.info("Recording engaged (prepended %d pre-buffer blocks, toggle=%s).", len(self._active_chunks), is_toggle)
+
+            try:
+                self._stream = sd.InputStream(
+                    samplerate=self.sample_rate,
+                    channels=1,
+                    dtype="float32",
+                    callback=self._audio_callback,
+                    blocksize=self.block_size,
+                )
+                self._stream.start()
+                log.info("Microphone engaged on demand (toggle=%s).", is_toggle)
+            except Exception as e:
+                log.error("Failed to open on-demand audio stream: %s", e)
+                self.is_recording = False
 
     def stop(self) -> np.ndarray:
-        """Concludes recording, applies peak AGC normalization, and returns buffer."""
+        """Concludes recording, immediately closes stream to release hardware for Siri, and returns buffer."""
         with self._lock:
             if not self.is_recording:
                 return np.zeros(0, dtype=np.float32)
@@ -110,6 +96,15 @@ class AudioRecorder:
             self.is_recording = False
             self.is_toggle_mode = False
             self.on_silence_callback = None
+
+            if self._stream:
+                try:
+                    self._stream.stop()
+                    self._stream.close()
+                except Exception:
+                    pass
+                self._stream = None
+
             chunks = self._active_chunks
             self._active_chunks = []
 

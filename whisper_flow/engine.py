@@ -1,13 +1,14 @@
-"""voice/dictation/engine.py — Central OpenWhisper-Style Dictation Orchestrator.
+"""whisper_flow/engine.py — Central FreeFlow Dictation Orchestrator.
 
 Wires together:
-1. AudioRecorder (16kHz float32)
-2. MLXTranscriber (Local Apple Silicon Whisper with vocabulary biasing)
-3. DictionaryManager (Konkani words, personal names, longest-match-first post-corrections)
-4. ContextDetector (macOS frontmost app & window awareness)
+1. AudioRecorder (16kHz float32 + 400ms ring buffer + AGC + VAD silence auto-cutoff)
+2. MLXTranscriber (Local Apple Silicon Whisper with dynamic model switching)
+3. DictionaryManager (Acoustic biasing + longest-match-first post-corrections)
+4. ContextDetector (macOS/cross-platform frontmost app & window awareness)
 5. Cleaner (Rule-based instant cleaner + Local SLM self-correction & formatting)
 6. TextInjector (Fast pasteboard + Cmd+V with transparent clipboard restore)
-7. DictationHUD (Visual floating overlay & non-blocking sound cues)
+7. HistoryManager (Persistent clipboard history with 1-click re-copying)
+8. DictationHUD (Visual floating pill overlay & audio cues)
 """
 
 from __future__ import annotations
@@ -17,57 +18,89 @@ import logging
 import re
 import threading
 import time
-from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 
 from whisper_flow.app_context import AppContext, ContextDetector
 from whisper_flow.cleaner import RuleCleaner, SLMCleaner
+from whisper_flow.config import ConfigManager
 from whisper_flow.dictionary import DictionaryManager
-from whisper_flow.hotkey import HotkeyMonitor
+from whisper_flow.history import HistoryManager
 from whisper_flow.hud import DictationHUD
 from whisper_flow.injector import TextInjector
 from whisper_flow.recorder import AudioRecorder
 from whisper_flow.transcriber import MLXTranscriber
 
-log = logging.getLogger("dictation.engine")
+log = logging.getLogger("freeflow.engine")
 
 
 class DictationEngine:
-    """Universal macOS Speech-to-Text Dictation Engine."""
+    """Universal 100% On-Device Dictation Engine."""
 
     def __init__(
         self,
-        whisper_model: str = "mlx-community/whisper-large-v3-turbo-4bit",
-        slm_model: str = "qwen2.5:1.5b",
-        enable_slm: bool = True,
+        config_mgr: Optional[ConfigManager] = None,
+        history_mgr: Optional[HistoryManager] = None,
+        dict_mgr: Optional[DictionaryManager] = None,
+        whisper_model: Optional[str] = None,
+        slm_model: Optional[str] = None,
+        enable_slm: Optional[bool] = None,
+        status_callback: Optional[Callable[[str, dict], None]] = None,
+        prewarm: bool = True,
     ) -> None:
-        log.info("Initializing Universal Dictation Engine...")
-        self.recorder = AudioRecorder(sample_rate=16000)
-        self.transcriber = MLXTranscriber(model_repo=whisper_model)
-        self.dictionary_mgr = DictionaryManager()
+        log.info("Initializing FreeFlow Dictation Engine...")
+        self.config_mgr = config_mgr or ConfigManager()
+        self.config = self.config_mgr.config
+        self.history_mgr = history_mgr or HistoryManager()
+        self.dictionary_mgr = dict_mgr or DictionaryManager()
         self.context_detector = ContextDetector()
         self.rule_cleaner = RuleCleaner()
-        self.slm_cleaner = SLMCleaner(model_name=slm_model)
-        self.enable_slm = enable_slm
-        self.hud = DictationHUD()
+
+        # Config overrides
+        active_model = whisper_model or self.config.whisper_model
+        active_slm_model = slm_model or self.config.slm_model
+        self.enable_slm = enable_slm if enable_slm is not None else self.config.enable_slm
+
+        self.recorder = AudioRecorder(sample_rate=16000)
+        self.transcriber = MLXTranscriber(model_repo=active_model)
+        self.slm_cleaner = SLMCleaner(model_name=active_slm_model)
+        self.hud = DictationHUD(
+            enable_sound=self.config.enable_sound,
+            enable_hud=self.config.enable_hud,
+        )
+
+        self.status_callback = status_callback
+        self.current_state = "idle"
         self._processing_lock = threading.Lock()
-        threading.Thread(target=self._prewarm, daemon=True).start()
+        self.hotkey_monitor = None
+
+        if prewarm:
+            threading.Thread(target=self._prewarm, daemon=True).start()
+
+    def set_status(self, state: str, **kwargs: str) -> None:
+        self.current_state = state
+        if self.status_callback:
+            try:
+                self.status_callback(state, kwargs)
+            except Exception as e:
+                log.debug("Status callback error: %s", e)
 
     def _prewarm(self) -> None:
         """Pre-warms MLX Whisper in memory so the first dictation is instant."""
-        try:
-            log.info("Pre-warming MLX Whisper in memory...")
-            dummy = np.zeros(16000, dtype=np.float32)
-            self.transcriber.transcribe(dummy)
-            log.info("✅ MLX Whisper pre-warmed and ready.")
-        except Exception as e:
-            log.debug("Pre-warm degraded: %s", e)
+        self.transcriber.prewarm()
+
+    def switch_model(self, model_repo: str) -> None:
+        """Switches the active MLX Whisper model and prewarms it."""
+        log.info("Switching engine model to: %s", model_repo)
+        self.transcriber.set_model(model_repo)
+        self.config_mgr.update(whisper_model=model_repo)
+        threading.Thread(target=self._prewarm, daemon=True).start()
 
     def start_recording(self, is_toggle: bool = False) -> None:
         """Called immediately when push-to-talk key is pressed or toggle begins."""
         try:
+            self.set_status("recording", mode="toggle" if is_toggle else "hold")
             self.hud.on_recording_start()
             self.recorder.start(
                 is_toggle=is_toggle,
@@ -75,18 +108,20 @@ class DictationEngine:
             )
         except Exception as e:
             log.error("Failed to start dictation recording: %s", e)
+            self.set_status("idle")
             self.hud.on_cancel()
 
     def upgrade_to_toggle(self) -> None:
         """Upgrades active recording from push-to-talk to hands-free toggle with silence detection."""
         log.info("Upgrading active recording to hands-free toggle mode with VAD.")
+        self.set_status("recording", mode="toggle")
         self.recorder.is_toggle_mode = True
         self.recorder.on_silence_callback = self._on_silence_cutoff
 
     def _on_silence_cutoff(self) -> None:
         """Invoked when user stops speaking in hands-free toggle mode for >2.5s."""
-        log.info("Silence cutoff triggered in engine (>2.5s pause). Finalizing dictation.")
-        if hasattr(self, "hotkey_monitor") and self.hotkey_monitor:
+        log.info("Silence cutoff triggered in engine (>%.1fs pause). Finalizing dictation.", self.config.vad_pause_seconds)
+        if self.hotkey_monitor:
             self.hotkey_monitor.reset_toggle()
         self.stop_recording_and_process()
 
@@ -105,25 +140,30 @@ class DictationEngine:
             audio_data = self.recorder.stop()
             duration = len(audio_data) / 16000.0
 
-            # Guard against accidental micro-taps (<0.25s or near-silent)
+            # Guard against accidental micro-taps (<0.25s)
             if duration < 0.25:
                 log.info("Audio duration too short (%.2fs); ignoring.", duration)
                 self.hud.on_cancel()
+                self.set_status("idle")
                 return
 
+            self.set_status("transcribing", duration=f"{duration:.1f}s")
             self.hud.on_transcribing()
 
             # 2. Inspect active macOS application context
             context = self.context_detector.get_active_context()
-            log.info("Active Context: App='%s', Title='%s', Mode='%s'", context.app_name, context.window_title, context.mode.value)
+            log.info("Active Context: App='%s', Mode='%s'", context.app_name, context.mode.value)
 
             # 3. Transcribe via local Apple Silicon Whisper
-            initial_prompt = self.dictionary_mgr.get_initial_prompt()
+            initial_prompt = self.dictionary_mgr.get_initial_prompt(
+                max_words=self.config.custom_vocab_prompt_limit
+            )
             raw_transcript = self.transcriber.transcribe(audio_data, initial_prompt=initial_prompt)
 
             if not raw_transcript.strip():
                 log.info("Transcribed text is empty.")
                 self.hud.on_cancel()
+                self.set_status("idle")
                 return
 
             log.info("Raw ASR Transcript: '%s'", raw_transcript)
@@ -134,28 +174,42 @@ class DictationEngine:
                 log.info("Applied %d dictionary corrections: %s", len(applied_rules), applied_rules)
 
             # 5. Text Cleanup, Formatting & Mid-Sentence Correction
+            self.set_status("formatting", app=context.app_name)
             self.hud.on_formatting(context.app_name)
             final_text = self._clean_and_format(corrected_text, context)
             log.info("Final Cleaned Text (%d chars): '%s'", len(final_text), final_text)
 
             # 6. Inject into focused field
-            success = TextInjector.inject(final_text, restore_clipboard=True)
+            success = TextInjector.inject(final_text, restore_clipboard=self.config.restore_clipboard)
             if success:
                 self.hud.on_complete(preview_text=final_text)
+                self.set_status("done", preview=final_text[:40])
+                # Save to persistent clipboard history
+                self.history_mgr.add_entry(
+                    text=final_text,
+                    raw_text=raw_transcript,
+                    app_name=context.app_name,
+                    mode=context.mode.value,
+                    duration_s=duration,
+                    model_name=self.transcriber.model_repo.split("/")[-1],
+                )
             else:
                 self.hud.on_cancel()
+                self.set_status("idle")
 
             log.info("Dictation pipeline finished in %.2fs total.", time.time() - t_total_0)
 
         except Exception as e:
             log.error("Error in dictation pipeline: %s", e, exc_info=True)
             self.hud.on_cancel()
+            self.set_status("idle")
         finally:
+            time.sleep(0.3)
+            self.set_status("idle")
             self._processing_lock.release()
 
     def _clean_and_format(self, text: str, context: AppContext) -> str:
         """Runs two-tier cleanup: fast rule cleanup, followed by SLM if enabled."""
-        # Tier 1: Deterministic rule cleaner
         rule_output = self.rule_cleaner.clean(text, context)
 
         if not self.enable_slm:
@@ -166,8 +220,7 @@ class DictationEngine:
             log.info("Devanagari text detected; returning rule cleaner output to preserve native Hindi.")
             return rule_output
 
-        # Tier 2: Context-aware SLM rewriter
-        # Only invoke SLM if there's self-correction markers or in coding/notes modes
+        # Only invoke SLM if there's self-correction markers or in coding/notes modes or longer phrases
         needs_slm = (
             any(w in text.lower() for w in ("wait", "no wait", "actually", "scratch that", "make it"))
             or context.mode.value in ("code", "notes")

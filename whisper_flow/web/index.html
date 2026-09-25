@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeFlow — On-Device Voice Dictation</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <div class="brand-orb"></div>
+          <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <div class="brand-title">FreeFlow <span class="badge-version">v1.0</span></div>
+          <div class="brand-desc">100% On-Device Voice Dictation • Apple Silicon Metal</div>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div class="status-pill" id="engineStatusPill">
+          <span class="status-indicator" id="statusDot"></span>
+          <span class="status-label" id="statusText">Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-models">
+        <span class="tab-icon">🎙️</span>
+        <span class="tab-title">Voice Models</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-dictionary">
+        <span class="tab-icon">📖</span>
+        <span class="tab-title">Dictionary & Slang</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-history">
+        <span class="tab-icon">📋</span>
+        <span class="tab-title">Clipboard History</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-settings">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-title">Settings</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="tab-content-area">
+
+      <!-- TAB 1: Voice Models & RAM Budgets -->
+      <section id="tab-models" class="tab-pane active">
+        <div class="section-header">
+          <div>
+            <h2>Voice Modules & RAM Budget</h2>
+            <p>1-Click Apple MLX quantized Whisper weights optimized for your unified memory.</p>
+          </div>
+          <div class="memory-badge" id="ramSummaryBadge">
+            <span class="memory-icon">⚡</span>
+            <span id="activeModelRamText">Active: ~740 MB Unified RAM</span>
+          </div>
+        </div>
+
+        <div class="models-grid" id="modelsGrid">
+          <!-- Dynamically populated via app.js -->
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">💡</div>
+          <div class="info-body">
+            <strong>Sub-350ms Dictation Latency:</strong> All models run fully on-device via Apple Silicon Metal acceleration (`mlx-whisper`). Zero audio or text ever leaves your Mac.
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Custom Vocabulary & Corrections -->
+      <section id="tab-dictionary" class="tab-pane">
+        <div class="section-header">
+          <div>
+            <h2>Custom Dictionary & Phonetic Rules</h2>
+            <p>Teach FreeFlow your personal jargon, names, and phonetic replacements.</p>
+          </div>
+        </div>
+
+        <div class="dict-split-grid">
+          <!-- Acoustic Biasing Vocabulary -->
+          <div class="card glass-card">
+            <div class="card-header">
+              <div>
+                <h3>Acoustic Vocabulary</h3>
+                <p>Biases Whisper to prioritize recognizing specific technical words or names.</p>
+              </div>
+              <span class="counter-badge" id="vocabCount">0 words</span>
+            </div>
+
+            <form id="addWordForm" class="input-row">
+              <input type="text" id="newWordInput" placeholder="Add word (e.g., Susegad, MLX, Claude)..." required>
+              <button type="submit" class="btn btn-primary">+ Add</button>
+            </form>
+
+            <div class="tags-container" id="vocabTagsContainer">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Phonetic Post-Corrections -->
+          <div class="card glass-card">
+            <div class="card-header">
+              <div>
+                <h3>Phonetic Corrections</h3>
+                <p>Deterministic regex replacement for commonly misheard phrases.</p>
+              </div>
+              <span class="counter-badge" id="correctionsCount">0 rules</span>
+            </div>
+
+            <form id="addCorrectionForm" class="input-grid">
+              <input type="text" id="heardInput" placeholder="What Whisper hears (e.g. visval floor)" required>
+              <input type="text" id="writeInput" placeholder="What FreeFlow writes (e.g. FreeFlow)" required>
+              <button type="submit" class="btn btn-primary">+ Add Rule</button>
+            </form>
+
+            <div class="corrections-table-wrapper">
+              <table class="corrections-table">
+                <thead>
+                  <tr>
+                    <th>Heard</th>
+                    <th></th>
+                    <th>Writes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="correctionsTableBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Clipboard History -->
+      <section id="tab-history" class="tab-pane">
+        <div class="section-header">
+          <div>
+            <h2>Clipboard History</h2>
+            <p>Chronological log of recent dictated snippets with 1-click re-copying.</p>
+          </div>
+          <div class="history-actions">
+            <input type="text" id="historySearchInput" placeholder="🔍 Search dictated snippets..." class="search-input">
+            <button class="btn btn-danger-outline" id="clearHistoryBtn">Clear History</button>
+          </div>
+        </div>
+
+        <div class="history-list" id="historyListContainer">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- TAB 4: Settings -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="section-header">
+          <div>
+            <h2>Preferences & Dictation Settings</h2>
+            <p>Fine-tune shortcuts, cleanup pipelines, and audio feedback.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Hotkey & Activation -->
+          <div class="card glass-card">
+            <h3>Trigger & Shortcuts</h3>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <label for="hotkeySelect">Push-to-Talk Hotkey</label>
+                <span class="setting-desc">Hold to speak, release to instantly paste into focused app.</span>
+              </div>
+              <select id="hotkeySelect" class="form-select">
+                <option value="alt_r">Right Option (alt_r) — Recommended</option>
+                <option value="alt_l">Left Option (alt_l)</option>
+                <option value="cmd_r">Right Command (cmd_r)</option>
+                <option value="ctrl_r">Right Control (ctrl_r)</option>
+                <option value="f8">F8 Key</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label>Silence Auto-Cutoff (VAD)</label>
+                <span class="setting-desc">Hands-free double-tap automatically stops after quiet pause.</span>
+              </div>
+              <div class="range-wrapper">
+                <input type="range" id="vadSlider" min="1.5" max="4.5" step="0.5" value="2.5">
+                <span id="vadValueText" class="mono-badge">2.5s</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two-Tier AI Cleanup -->
+          <div class="card glass-card">
+            <h3>Text Formatting & Intelligence</h3>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label for="enableSlmToggle">Smart SLM Formatting (Tier 2)</label>
+                <span class="setting-desc">Applies in-place mid-sentence self-corrections via local Ollama.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="enableSlmToggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item" id="slmModelRow">
+              <div class="setting-info">
+                <label for="slmModelInput">Ollama SLM Model</label>
+                <span class="setting-desc">Local low-RAM model for contextual grammar & formatting.</span>
+              </div>
+              <input type="text" id="slmModelInput" value="qwen2.5:1.5b" class="form-input">
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label for="restoreClipboardToggle">Transparent Clipboard Restore</label>
+                <span class="setting-desc">Restores previous clipboard content 120ms after injection.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="restoreClipboardToggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Visual & Audio Feedback -->
+          <div class="card glass-card">
+            <h3>Visual & Sound Cues</h3>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label for="enableHudToggle">Floating Siri-Style Pill HUD</label>
+                <span class="setting-desc">Displays glowing waveform and status pill on top of screen.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="enableHudToggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <label for="enableSoundToggle">Audio Cues</label>
+                <span class="setting-desc">Play soft pop/chime on recording start and paste.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="enableSoundToggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="toast">Action completed!</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

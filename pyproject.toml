@@ -21,6 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
+freeflow = "whisper_flow.main:main"
 whisper-flow = "whisper_flow.main:main"
 
 [tool.setuptools.packages.find]
