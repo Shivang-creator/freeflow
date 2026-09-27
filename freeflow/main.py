@@ -1,13 +1,13 @@
-"""whisper_flow/main.py — FreeFlow CLI & App Entrypoint.
+"""freeflow/main.py — FreeFlow CLI & App Entrypoint.
 
 Usage:
     # 1-Click Launch: Starts macOS Menu Bar App with floating HUD
     freeflow
-    python -m whisper_flow.main
+    python -m freeflow.main
 
     # Headless CLI daemon
     freeflow --cli
-    python -m whisper_flow.main --cli
+    python -m freeflow.main --cli
 
     # List & Download Voice Modules
     freeflow --models
@@ -39,18 +39,18 @@ logging.basicConfig(
 )
 log = logging.getLogger("freeflow")
 
-from whisper_flow.constants import (
+from freeflow.constants import (
     APP_NAME,
     APP_SUBTITLE,
     APP_VERSION,
     HOTKEYS,
     MODELS,
 )
-from whisper_flow.dictionary import DictionaryManager
-from whisper_flow.engine import DictationEngine
-from whisper_flow.history import HistoryManager
-from whisper_flow.hotkey import HotkeyMonitor
-from whisper_flow.transcriber import download_model, is_model_cached
+from freeflow.dictionary import DictionaryManager
+from freeflow.engine import DictationEngine
+from freeflow.history import HistoryManager
+from freeflow.hotkey import HotkeyMonitor
+from freeflow.transcriber import download_model, is_model_cached
 
 
 def parse_args() -> argparse.Namespace:
@@ -185,7 +185,7 @@ def main() -> None:
     # If running on macOS without --cli, launch Native Menu Bar App by default
     if sys.platform == "darwin" and not args.cli:
         try:
-            from whisper_flow.app import run_menu_bar_app
+            from freeflow.app import run_menu_bar_app
             print(f"🚀 Starting {APP_NAME} Menu Bar App...")
             engine = DictationEngine(
                 whisper_model=model_repo,

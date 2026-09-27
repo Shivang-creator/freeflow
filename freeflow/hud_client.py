@@ -1,4 +1,4 @@
-"""whisper_flow/hud_client.py — Client for the Native Siri-Style FreeFlow Floating HUD."""
+"""freeflow/hud_client.py — Client for the Native Siri-Style FreeFlow Floating HUD."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from whisper_flow.constants import FREEFLOW_HUD_SOCKET, LEGACY_HUD_SOCKET
+from freeflow.constants import FREEFLOW_HUD_SOCKET, LEGACY_HUD_SOCKET
 
 log = logging.getLogger("freeflow.hud")
 

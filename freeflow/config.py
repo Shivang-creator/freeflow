@@ -1,4 +1,4 @@
-"""whisper_flow/config.py — Persistent Configuration Manager for FreeFlow."""
+"""freeflow/config.py — Persistent Configuration Manager for FreeFlow."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from whisper_flow.constants import (
+from freeflow.constants import (
     CONFIG_DIR,
     CONFIG_FILE,
     DEFAULT_MODEL_REPO,

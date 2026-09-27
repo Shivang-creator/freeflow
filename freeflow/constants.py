@@ -1,4 +1,4 @@
-"""whisper_flow/constants.py — Universal Constants and Model Definitions for FreeFlow."""
+"""freeflow/constants.py — Universal Constants and Model Definitions for FreeFlow."""
 
 from __future__ import annotations
 

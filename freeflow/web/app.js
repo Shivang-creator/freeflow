@@ -1,4 +1,4 @@
-// whisper_flow/web/app.js — Reactive Client for FreeFlow Dictation
+// freeflow/web/app.js — Reactive Client for FreeFlow Dictation
 
 const API_BASE = window.location.origin;
 

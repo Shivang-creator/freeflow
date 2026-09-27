@@ -1,11 +1,11 @@
-"""whisper_flow/platform/linux.py — Linux Text Injection and Window Detection (X11 / Wayland)."""
+"""freeflow/platform/linux.py — Linux Text Injection and Window Detection (X11 / Wayland)."""
 
 from __future__ import annotations
 
 import logging
 import shutil
 import subprocess
-from whisper_flow.platform.base import (
+from freeflow.platform.base import (
     BaseContextProvider,
     BaseTextInjector,
     PlatformAppContext,

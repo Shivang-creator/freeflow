@@ -3,8 +3,8 @@
 import json
 import time
 import urllib.request
-from whisper_flow.engine import DictationEngine
-from whisper_flow.server import APIServer
+from freeflow.engine import DictationEngine
+from freeflow.server import APIServer
 
 
 def test_api_endpoints():

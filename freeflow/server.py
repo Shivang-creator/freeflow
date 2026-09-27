@@ -1,4 +1,4 @@
-"""whisper_flow/server.py — Lightweight Local HTTP API & Web UI Server for FreeFlow."""
+"""freeflow/server.py — Lightweight Local HTTP API & Web UI Server for FreeFlow."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Optional
 
-from whisper_flow.constants import APP_NAME, APP_VERSION, HOTKEYS, MODELS
-from whisper_flow.engine import DictationEngine
-from whisper_flow.injector import TextInjector
-from whisper_flow.transcriber import download_model, is_model_cached
+from freeflow.constants import APP_NAME, APP_VERSION, HOTKEYS, MODELS
+from freeflow.engine import DictationEngine
+from freeflow.injector import TextInjector
+from freeflow.transcriber import download_model, is_model_cached
 
 log = logging.getLogger("freeflow.server")
 WEB_DIR = Path(__file__).resolve().parent / "web"

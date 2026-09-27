@@ -1,4 +1,4 @@
-"""whisper_flow/history.py — Persistent Transcription & Clipboard History for FreeFlow."""
+"""freeflow/history.py — Persistent Transcription & Clipboard History for FreeFlow."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from whisper_flow.constants import HISTORY_FILE
+from freeflow.constants import HISTORY_FILE
 
 log = logging.getLogger("freeflow.history")
 

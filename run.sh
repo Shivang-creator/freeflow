@@ -28,4 +28,4 @@ fi
 
 # Launch FreeFlow
 echo "🎙️ Launching FreeFlow (On-Device Speech-to-Text)..."
-exec .venv/bin/python -m whisper_flow.main "$@"
+exec .venv/bin/python -m freeflow.main "$@"

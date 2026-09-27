@@ -1,10 +1,10 @@
-"""whisper_flow/injector.py — Universal Text Injection into Focused Application."""
+"""freeflow/injector.py — Universal Text Injection into Focused Application."""
 
 from __future__ import annotations
 
 from typing import Optional
 
-from whisper_flow.platform import BaseTextInjector, get_text_injector
+from freeflow.platform import BaseTextInjector, get_text_injector
 
 
 class TextInjector:

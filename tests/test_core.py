@@ -3,10 +3,10 @@
 import tempfile
 from pathlib import Path
 
-from whisper_flow.cleaner import RuleCleaner
-from whisper_flow.config import AppConfig, ConfigManager
-from whisper_flow.dictionary import DictionaryManager
-from whisper_flow.history import HistoryManager
+from freeflow.cleaner import RuleCleaner
+from freeflow.config import AppConfig, ConfigManager
+from freeflow.dictionary import DictionaryManager
+from freeflow.history import HistoryManager
 
 
 def test_rule_cleaner_fillers():

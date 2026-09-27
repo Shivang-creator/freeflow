@@ -1,4 +1,4 @@
-"""whisper_flow/hud.py — Visual & Audio State Feedback for Dictation."""
+"""freeflow/hud.py — Visual & Audio State Feedback for Dictation."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import logging
 import subprocess
 from typing import Optional
 
-from whisper_flow.hud_client import (
+from freeflow.hud_client import (
     hud_done,
     hud_formatting,
     hud_hide,

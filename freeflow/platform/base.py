@@ -1,4 +1,4 @@
-"""whisper_flow/platform/base.py — Abstract Base Interfaces for Cross-Platform Support."""
+"""freeflow/platform/base.py — Abstract Base Interfaces for Cross-Platform Support."""
 
 from __future__ import annotations
 

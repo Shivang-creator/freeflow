@@ -174,7 +174,7 @@ freeflow --test-clean "have pink as the colour wait wait no make it blue and sav
 │  ├── Siri-style glowing orb & active waveform bars     │
 │  └── Overlays full-screen apps and multiple spaces     │
 ├────────────────────────────────────────────────────────┤
-│  [Core Engine] (whisper_flow)                          │
+│  [Core Engine] (freeflow)                          │
 │  ├── 16kHz Stream with 400ms Rolling Ring Buffer + AGC │
 │  ├── Apple MLX Metal Whisper Engine (sub-350ms)        │
 │  ├── Context Detector (AppKit / AppleScript inspector) │
@@ -198,7 +198,7 @@ freeflow --test-clean "have pink as the colour wait wait no make it blue and sav
 - [x] 1-Click Model Downloader & RAM Budget options
 - [x] Interactive Frosted Glass Settings & Dictionary UI (WKWebView)
 - [x] Persistent Clipboard History Manager
-- [x] Modular platform abstraction layer (`whisper_flow.platform`)
+- [x] Modular platform abstraction layer (`freeflow.platform`)
 - [ ] Linux support (xdotool / wl-clipboard / whisper.cpp)
 - [ ] Windows support (win32gui / DirectML)
 - [ ] Standalone `.dmg` signed installer

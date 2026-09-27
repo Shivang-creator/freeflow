@@ -1,4 +1,4 @@
-"""whisper_flow/dictionary.py — Custom Vocabulary & Phonetic Correction Engine for FreeFlow.
+"""freeflow/dictionary.py — Custom Vocabulary & Phonetic Correction Engine for FreeFlow.
 
 Implements two complementary mechanisms:
 1. Acoustic Biasing: Biases Whisper's initial_prompt so the decoder leans toward user terms.
@@ -16,7 +16,7 @@ import unicodedata
 from pathlib import Path
 from typing import Any, Optional
 
-from whisper_flow.constants import DEFAULT_DICTIONARY_FILE, USER_DICTIONARY_FILE
+from freeflow.constants import DEFAULT_DICTIONARY_FILE, USER_DICTIONARY_FILE
 
 log = logging.getLogger("freeflow.dictionary")
 

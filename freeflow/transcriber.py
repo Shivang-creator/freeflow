@@ -1,4 +1,4 @@
-"""whisper_flow/transcriber.py — On-Device Apple Silicon Whisper Transcriber & Model Manager.
+"""freeflow/transcriber.py — On-Device Apple Silicon Whisper Transcriber & Model Manager.
 
 Uses `mlx_whisper` to execute transcription locally via Apple Silicon unified memory
 and Metal acceleration.
@@ -20,7 +20,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 
-from whisper_flow.constants import DEFAULT_MODEL_REPO, MODELS
+from freeflow.constants import DEFAULT_MODEL_REPO, MODELS
 
 log = logging.getLogger("freeflow.transcriber")
 

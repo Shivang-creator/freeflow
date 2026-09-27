@@ -1,9 +1,9 @@
-"""whisper_flow/platform/windows.py — Windows Text Injection and Context Provider Stubs."""
+"""freeflow/platform/windows.py — Windows Text Injection and Context Provider Stubs."""
 
 from __future__ import annotations
 
 import logging
-from whisper_flow.platform.base import (
+from freeflow.platform.base import (
     BaseContextProvider,
     BaseTextInjector,
     PlatformAppContext,

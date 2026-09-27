@@ -1,4 +1,4 @@
-"""whisper_flow/engine.py — Central FreeFlow Dictation Orchestrator.
+"""freeflow/engine.py — Central FreeFlow Dictation Orchestrator.
 
 Wires together:
 1. AudioRecorder (16kHz float32 + 400ms ring buffer + AGC + VAD silence auto-cutoff)
@@ -22,15 +22,15 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from whisper_flow.app_context import AppContext, ContextDetector
-from whisper_flow.cleaner import RuleCleaner, SLMCleaner
-from whisper_flow.config import ConfigManager
-from whisper_flow.dictionary import DictionaryManager
-from whisper_flow.history import HistoryManager
-from whisper_flow.hud import DictationHUD
-from whisper_flow.injector import TextInjector
-from whisper_flow.recorder import AudioRecorder
-from whisper_flow.transcriber import MLXTranscriber
+from freeflow.app_context import AppContext, ContextDetector
+from freeflow.cleaner import RuleCleaner, SLMCleaner
+from freeflow.config import ConfigManager
+from freeflow.dictionary import DictionaryManager
+from freeflow.history import HistoryManager
+from freeflow.hud import DictationHUD
+from freeflow.injector import TextInjector
+from freeflow.recorder import AudioRecorder
+from freeflow.transcriber import MLXTranscriber
 
 log = logging.getLogger("freeflow.engine")
 

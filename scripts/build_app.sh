@@ -63,7 +63,7 @@ EOF
 # Copy repository source code and assets into Resources/app
 mkdir -p "${RESOURCES}/app"
 cp -r pyproject.toml requirements.txt README.md run.sh "${RESOURCES}/app/"
-cp -r whisper_flow "${RESOURCES}/app/"
+cp -r freeflow "${RESOURCES}/app/"
 cp -r hud "${RESOURCES}/app/"
 
 # Ensure HUD binary is compiled
@@ -120,7 +120,7 @@ if [ ! -f "$APP_DIR/hud/freeflow-hud" ]; then
 fi
 
 # Launch FreeFlow Menu Bar App
-exec "$PYTHON_BIN" -m whisper_flow.main --app
+exec "$PYTHON_BIN" -m freeflow.main --app
 EOF
 
 chmod +x "${MACOS}/FreeFlow"

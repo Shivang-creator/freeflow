@@ -1,4 +1,4 @@
-"""whisper_flow/app.py — Native macOS Menu Bar Application for FreeFlow.
+"""freeflow/app.py — Native macOS Menu Bar Application for FreeFlow.
 
 Provides:
 - Menu Bar Status Item (NSStatusBar) with live state indicator (Ready, Recording, Processing)
@@ -43,11 +43,11 @@ from AppKit import (
 # Load WebKit framework
 objc.loadBundle("WebKit", globals(), bundle_path="/System/Library/Frameworks/WebKit.framework")
 
-from whisper_flow.constants import APP_NAME, HOTKEYS, MODELS
-from whisper_flow.engine import DictationEngine
-from whisper_flow.hotkey import HotkeyMonitor
-from whisper_flow.injector import TextInjector
-from whisper_flow.server import APIServer
+from freeflow.constants import APP_NAME, HOTKEYS, MODELS
+from freeflow.engine import DictationEngine
+from freeflow.hotkey import HotkeyMonitor
+from freeflow.injector import TextInjector
+from freeflow.server import APIServer
 
 log = logging.getLogger("freeflow.app")
 

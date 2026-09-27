@@ -1,8 +1,8 @@
-"""whisper_flow/app_context.py — Frontmost Application & Context Awareness."""
+"""freeflow/app_context.py — Frontmost Application & Context Awareness."""
 
 from __future__ import annotations
 
-from whisper_flow.platform import (
+from freeflow.platform import (
     BaseContextProvider,
     PlatformAppContext as AppContext,
     PlatformAppMode as AppMode,

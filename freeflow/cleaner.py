@@ -21,7 +21,7 @@ from typing import Optional
 
 import httpx
 
-from whisper_flow.app_context import AppContext, AppMode
+from freeflow.app_context import AppContext, AppMode
 
 log = logging.getLogger("dictation.cleaner")
 

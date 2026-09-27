@@ -1,4 +1,4 @@
-"""whisper_flow/platform/macos.py — macOS Native Context Detection and Keystroke Injection."""
+"""freeflow/platform/macos.py — macOS Native Context Detection and Keystroke Injection."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import subprocess
 import time
 from typing import Optional
 
-from whisper_flow.platform.base import (
+from freeflow.platform.base import (
     BaseContextProvider,
     BaseTextInjector,
     PlatformAppContext,

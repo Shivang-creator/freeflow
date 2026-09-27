@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "whisper-flow"
+name = "freeflow"
 version = "0.1.0"
 description = "Universal 100% on-device speech-to-text dictation engine for Apple Silicon with low RAM and instant paste."
 readme = "README.md"
@@ -21,8 +21,8 @@ dependencies = [
 ]
 
 [project.scripts]
-freeflow = "whisper_flow.main:main"
-whisper-flow = "whisper_flow.main:main"
+freeflow = "freeflow.main:main"
+whisper-flow = "freeflow.main:main"
 
 [tool.setuptools.packages.find]
-include = ["whisper_flow*"]
+include = ["freeflow*", "whisper_flow*"]
