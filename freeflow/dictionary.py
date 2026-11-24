@@ -194,7 +194,10 @@ class DictionaryManager:
             matches = list(regex.finditer(result))
             if matches:
                 heard_sample = matches[0].group(0)
-                result = regex.sub(replacement, result)
+                # A function, not the string itself: re.sub treats a string as a template,
+                # so a "write" value containing a backslash (LaTeX, a Windows path) either
+                # raised re.error and lost the whole dictation, or turned into a control character.
+                result = regex.sub(lambda _m, r=replacement: r, result)
                 applied.append({
                     "from": heard_sample,
                     "to": replacement,

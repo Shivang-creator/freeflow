@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import threading
 import time
 import uuid
@@ -97,8 +98,13 @@ class HistoryManager:
         try:
             self.history_path.parent.mkdir(parents=True, exist_ok=True)
             data = [e.to_dict() for e in self.entries[: self.max_entries]]
-            with open(self.history_path, "w", encoding="utf-8") as f:
+            # Owner-only: this file is everything the user has dictated. The default
+            # umask would leave it readable by every other account on the Mac.
+            fd = os.open(self.history_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+            # os.open's mode only applies to new files; tighten ones written by older versions.
+            os.chmod(self.history_path, 0o600)
         except Exception as e:
             log.error("Failed to write history to %s: %s", self.history_path, e)
 
