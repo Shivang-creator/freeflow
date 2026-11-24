@@ -44,11 +44,37 @@ class FreeFlowAPIHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
+
+    def _is_local_ui_request(self) -> bool:
+        """True only for requests made by FreeFlow's own Web UI.
+
+        This API returns dictation history and can rewrite the dictionary, the
+        config and the clipboard, and it has no login. Binding to 127.0.0.1 keeps
+        other machines out, but not web pages: any site open in a browser on this
+        Mac can send requests to 127.0.0.1. Two checks close that:
+
+        - Host must be this server's own loopback address. A DNS-rebinding page
+          reaches us under its own hostname, so its Host header gives it away.
+        - Origin, when the browser sends one (every cross-site POST/DELETE and
+          every CORS fetch), must be this server's own origin.
+        """
+        port = self.server.server_address[1]
+        hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        if (self.headers.get("Host") or "").strip().lower() not in hosts:
+            return False
+        origin = self.headers.get("Origin")
+        if origin is not None and origin.strip().lower() not in {f"http://{h}" for h in hosts}:
+            return False
+        return True
+
+    def _reject_untrusted(self) -> bool:
+        if self._is_local_ui_request():
+            return False
+        self._send_json({"error": "Forbidden: FreeFlow's API only accepts requests from its own UI"}, status=403)
+        return True
 
     def _read_json(self) -> dict[str, Any]:
         try:
@@ -61,13 +87,17 @@ class FreeFlowAPIHandler(BaseHTTPRequestHandler):
         return {}
 
     def do_OPTIONS(self) -> None:
+        # No CORS headers on purpose: the UI is same-origin and never preflights,
+        # so a preflight can only come from another site and must not be approved.
+        if self._reject_untrusted():
+            return
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Content-Length", "0")
         self.end_headers()
 
     def do_GET(self) -> None:
+        if self._reject_untrusted():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
@@ -131,6 +161,8 @@ class FreeFlowAPIHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         data = self._read_json()
+        if self._reject_untrusted():
+            return
 
         if path == "/api/models/activate":
             repo = data.get("repo")
@@ -188,6 +220,8 @@ class FreeFlowAPIHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         data = self._read_json()
+        if self._reject_untrusted():
+            return
 
         if path == "/api/dictionary/word":
             word = data.get("word", "")
