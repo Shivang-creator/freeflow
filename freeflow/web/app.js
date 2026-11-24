@@ -182,7 +182,7 @@ async function loadDictionary() {
     chip.className = "tag-chip";
     chip.innerHTML = `
       <span>${escapeHTML(word)}</span>
-      <button class="tag-delete-btn" onclick="deleteWord('${escapeHTML(word)}')">×</button>
+      <button class="tag-delete-btn" onclick="deleteWord(${jsArg(word)})">×</button>
     `;
     vocabTagsContainer.appendChild(chip);
   });
@@ -199,7 +199,7 @@ async function loadDictionary() {
       <td class="arrow-col">➔</td>
       <td><span style="color:#00e5ff;font-weight:600;">${escapeHTML(write)}</span></td>
       <td>
-        <button class="btn btn-danger-outline" style="padding:3px 8px;font-size:11px;" onclick="deleteCorrection('${escapeHTML(heard)}')">Delete</button>
+        <button class="btn btn-danger-outline" style="padding:3px 8px;font-size:11px;" onclick="deleteCorrection(${jsArg(heard)})">Delete</button>
       </td>
     `;
     correctionsTableBody.appendChild(tr);
@@ -291,7 +291,7 @@ async function loadHistory(query = "") {
         <div class="history-text">${escapeHTML(item.text)}</div>
       </div>
       <div class="history-btn-group">
-        <button class="btn btn-copy" onclick="copySnippet('${escapeHTML(item.text).replace(/'/g, "\\'")}', this)">Copy</button>
+        <button class="btn btn-copy" onclick="copySnippet(${jsArg(item.text)}, this)">Copy</button>
       </div>
     `;
     historyListContainer.appendChild(card);
@@ -397,6 +397,15 @@ function escapeHTML(str) {
   return str.replace(/[&<>'"]/g, 
     tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
   );
+}
+
+// A value passed as an argument inside an inline on*="" handler.
+// escapeHTML alone is wrong there: the browser decodes &#39; back to ' before it
+// runs the handler, so any text with an apostrophe ("don't") broke the button and
+// text like ');... ran as code. JSON gives a complete JS string literal (quotes,
+// backslashes and newlines escaped); escapeHTML then makes that literal attribute-safe.
+function jsArg(str) {
+  return escapeHTML(JSON.stringify(String(str ?? "")));
 }
 
 // Initial Boot
