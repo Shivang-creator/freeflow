@@ -4,8 +4,11 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"
 
-# Ensure venv exists
-if [ ! -d ".venv" ]; then
+# Ensure a WORKING venv exists. Checking only for the directory is not enough: a
+# venv's python is a symlink to the interpreter it was built from, so after a
+# Homebrew/uv Python upgrade the directory is still there but nothing in it runs.
+if ! .venv/bin/python -c "" 2>/dev/null; then
+    rm -rf .venv
     echo "⚡ Initializing FreeFlow virtual environment..."
     if command -v uv &> /dev/null; then
         uv venv .venv
